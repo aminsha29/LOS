@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LoanOS — Apply for a Loan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0d0b26; --ink2:#3d3a5c; --ink3:#7b78a0;
+  --bg:#f2f0fb; --surface:#ffffff; --surface2:#f7f6fe; --border:#e4e1f5;
+  --primary:#6d28d9; --primary-light:#ede9fe; --primary-mid:#7c3aed;
+  --accent:#f59e0b; --accent-light:#fef3c7;
+  --green:#059669; --green-light:#d1fae5;
+  --red:#dc2626; --red-light:#fee2e2;
+  --blue:#2563eb; --blue-light:#dbeafe;
+  --sidebar:#100d2e; --sidebar2:#1a163d;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── APP FRAME (mobile-first, centered) ─────────────────────────────── */
+#appFrame{
+  max-width:460px;margin:0 auto;min-height:100vh;background:var(--surface);
+  display:flex;flex-direction:column;position:relative;
+  box-shadow:0 0 60px #0d0b2612;
+}
+@media(min-width:461px){
+  body{background:linear-gradient(160deg,#1a163d,#0d0b26)}
+  #appFrame{margin:20px auto;min-height:calc(100vh - 40px);border-radius:28px;overflow:hidden}
+}
+
+/* ── TOP BAR ─────────────────────────────────────────────────────────── */
+.app-topbar{
+  padding:16px 20px 14px;background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+}
+.tb-row1{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tb-logo{font-family:'Sora',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.5px;
+  background:linear-gradient(120deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tb-secure{
+  margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+  color:var(--green);background:var(--green-light);padding:3px 9px;border-radius:20px;
+}
+.tb-export-btn{
+  display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+  color:var(--primary);background:var(--primary-light);padding:3px 9px;border-radius:20px;
+  border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:.15s;
+}
+.tb-export-btn:hover{opacity:.85}
+.export-json-box{
+  width:100%;min-height:220px;border:1.5px solid var(--border);border-radius:12px;padding:12px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.5;color:var(--ink2);
+  background:var(--surface2);resize:vertical;outline:none;
+}
+.export-json-box:focus{border-color:var(--primary-mid)}
+.tb-back{
+  width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--ink2);
+  transition:.15s;
+}
+.tb-back:hover{border-color:var(--primary-mid);color:var(--primary)}
+.tb-back:disabled{opacity:0;pointer-events:none}
+
+/* progress bar */
+.progress-track{height:5px;background:var(--surface2);border-radius:20px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-mid));border-radius:20px;transition:width .4s ease}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);font-weight:600}
+.progress-label span:last-child{color:var(--primary)}
+
+/* mini stepper icons */
+.mini-stepper{display:flex;gap:4px;overflow-x:auto;padding:10px 20px 0;scrollbar-width:none}
+.mini-stepper::-webkit-scrollbar{display:none}
+.ms-item{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;
+  min-width:52px;opacity:.4;transition:.25s;
+}
+.ms-item.done{opacity:1}
+.ms-item.current{opacity:1}
+.ms-dot{
+  width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;background:var(--surface2);border:2px solid var(--border);color:var(--ink3);
+  transition:.25s;
+}
+.ms-item.done .ms-dot{background:var(--green);border-color:var(--green);color:#fff}
+.ms-item.current .ms-dot{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 0 0 4px var(--primary-light)}
+.ms-label{font-size:8.5px;color:var(--ink3);text-align:center;font-weight:600;white-space:nowrap}
+.ms-item.current .ms-label{color:var(--primary)}
+
+/* ── MAIN AREA ───────────────────────────────────────────────────────── */
+.app-main{flex:1;overflow-y:auto;padding:24px 20px 100px}
+.step-eyebrow{
+  font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+.step-title{font-family:'Sora',sans-serif;font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.4px;margin-bottom:6px}
+.step-sub{font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:24px}
+
+/* form elements */
+.field-group{margin-bottom:16px}
+.field-label{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px;display:block}
+.field-label .opt{font-weight:500;color:var(--ink3);text-transform:none;letter-spacing:0}
+.field-input{
+  width:100%;border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--surface2);
+  outline:none;transition:.2s;
+}
+.field-input:focus{border-color:var(--primary-mid);background:#fff;box-shadow:0 0 0 3px #7c3aed12}
+.field-input::placeholder{color:#a8a5c9}
+.field-input.invalid{border-color:var(--red);background:#fef2f2}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-hint{font-size:11px;color:var(--ink3);margin-top:5px}
+.field-error{font-size:11px;color:var(--red);margin-top:5px;display:none;font-weight:600}
+.field-error.show{display:block}
+select.field-input{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b78a0' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+
+/* pill radio group */
+.pill-group{display:flex;gap:8px;flex-wrap:wrap}
+.pill-opt{
+  padding:9px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);
+  font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:.15s;
+}
+.pill-opt:hover{border-color:var(--primary-mid)}
+.pill-opt.selected{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* card / info box */
+.info-box{
+  background:var(--primary-light);border:1px solid #ddd6fe;border-radius:14px;
+  padding:14px 16px;display:flex;gap:12px;margin-bottom:20px;
+}
+.info-box.amber{background:var(--accent-light);border-color:#fde68a}
+.info-box.green{background:var(--green-light);border-color:#86efac}
+.info-icon{font-size:20px;flex-shrink:0}
+.info-text{font-size:12px;color:var(--ink2);line-height:1.5}
+.info-text strong{color:var(--ink)}
+
+/* ── BRE PROCESSING ──────────────────────────────────────────────────── */
+.bre-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0}
+.bre-ring{
+  width:120px;height:120px;border-radius:50%;position:relative;margin-bottom:28px;
+  display:flex;align-items:center;justify-content:center;
+}
+.bre-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.bre-ring circle{fill:none;stroke-width:6;stroke-linecap:round}
+.bre-ring .track{stroke:var(--surface2)}
+.bre-ring .fill{stroke:url(#breGrad);transition:stroke-dashoffset .3s ease}
+.bre-pct{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;color:var(--primary)}
+.bre-checklist{width:100%;display:flex;flex-direction:column;gap:12px}
+.bre-check-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  background:var(--surface2);border:1px solid var(--border);transition:.3s;
+}
+.bre-check-item.done{background:var(--green-light);border-color:#86efac}
+.bre-check-item.active{background:var(--primary-light);border-color:#ddd6fe}
+.bci-icon{
+  width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;background:var(--surface);border:2px solid var(--border);color:var(--ink3);
+}
+.bre-check-item.done .bci-icon{background:var(--green);border-color:var(--green);color:#fff}
+.bre-check-item.active .bci-icon{border-color:var(--primary);color:var(--primary)}
+.bci-text{font-size:12.5px;font-weight:600;color:var(--ink2)}
+.bre-check-item.done .bci-text{color:var(--green)}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── OFFER SCREEN ────────────────────────────────────────────────────── */
+.offer-hero{
+  background:linear-gradient(135deg,var(--sidebar),#1a163d);border-radius:20px;
+  padding:24px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;
+}
+.offer-hero::after{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;
+  border-radius:50%;background:radial-gradient(circle,#7c3aed40,transparent 70%)}
+.oh-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.55}
+.oh-amount{font-family:'Sora',sans-serif;font-size:38px;font-weight:900;margin:6px 0;
+  background:linear-gradient(120deg,#c4b5fd,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.oh-badge{display:inline-flex;align-items:center;gap:5px;background:#ffffff18;border-radius:20px;
+  padding:4px 11px;font-size:11px;font-weight:700;color:#c4b5fd}
+
+.slider-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px}
+.slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.slider-label{font-size:12px;font-weight:700;color:var(--ink2)}
+.slider-value{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--primary)}
+input[type=range]{
+  width:100%;height:6px;border-radius:10px;-webkit-appearance:none;background:var(--border);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--primary);
+  cursor:pointer;border:3px solid #fff;box-shadow:0 2px 8px #6d28d950;
+}
+.slider-range{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:6px}
+
+.emi-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.emi-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.emi-box-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--ink)}
+.emi-box-lbl{font-size:10px;color:var(--ink3);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── ACCEPT SCREEN ──────────────────────────────────────────────────── */
+.terms-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.terms-row{display:flex;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.terms-row:last-child{border-bottom:none}
+.terms-row:nth-child(even){background:var(--surface2)}
+.tr-key{font-size:12px;color:var(--ink3)}
+.tr-val{font-size:13px;font-weight:700;color:var(--ink)}
+.checkbox-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:20px}
+.checkbox-row input{width:18px;height:18px;margin-top:1px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
+.checkbox-row input:disabled{cursor:not-allowed;opacity:.4}
+.checkbox-row label{font-size:12px;color:var(--ink2);line-height:1.5;cursor:pointer}
+.checkbox-row a{color:var(--primary);font-weight:600;text-decoration:none;cursor:pointer}
+
+/* ── KYC / VERIFICATION BLOCKS ───────────────────────────────────────── */
+.verify-block{border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;transition:.3s}
+.verify-block.verified{border-color:#86efac;background:var(--green-light)}
+.vb-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.vb-icon{width:38px;height:38px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.verify-block.verified .vb-icon{background:var(--green)}
+.vb-title{font-size:13px;font-weight:700;color:var(--ink)}
+.vb-status{font-size:11px;color:var(--ink3);margin-top:1px}
+.verify-block.verified .vb-status{color:var(--green);font-weight:600}
+.vb-check{margin-left:auto;font-size:20px;color:var(--green);display:none}
+.verify-block.verified .vb-check{display:block}
+.otp-row{display:flex;gap:8px;margin-top:10px}
+.otp-box{
+  width:38px;height:44px;text-align:center;border:1.5px solid var(--border);border-radius:10px;
+  font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;outline:none;transition:.2s;
+}
+.otp-box:focus{border-color:var(--primary-mid)}
+
+/* face capture */
+.face-frame{
+  width:140px;height:140px;border-radius:50%;border:3px dashed var(--border);margin:8px auto 16px;
+  display:flex;align-items:center;justify-content:center;font-size:44px;background:var(--surface2);
+  transition:.3s;
+}
+.face-frame.scanning{border-color:var(--primary);animation:pulse 1s ease infinite}
+.face-frame.done{border-color:var(--green);border-style:solid;background:var(--green-light)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #7c3aed30}50%{box-shadow:0 0 0 12px #7c3aed00}}
+
+/* ── AGREEMENT / ESIGN ───────────────────────────────────────────────── */
+.doc-preview{
+  border:1.5px solid var(--border);border-radius:14px;padding:16px;max-height:220px;overflow-y:auto;
+  background:var(--surface2);font-size:11.5px;line-height:1.7;color:var(--ink2);margin-bottom:16px;
+}
+.doc-preview h4{font-family:'Sora',sans-serif;font-size:13px;color:var(--ink);margin:10px 0 4px}
+.doc-preview h4:first-child{margin-top:0}
+.doc-preview p{margin-bottom:8px}
+.doc-pagebreak{border-top:1px dashed var(--border);margin:14px 0 4px}
+.sign-pad{
+  border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;
+  background:var(--surface2);margin-bottom:16px;
+}
+.sign-pad.signed{border-style:solid;border-color:var(--green);background:var(--green-light)}
+.sign-script{font-family:'Sora',sans-serif;font-size:26px;font-style:italic;color:var(--primary);margin-top:8px}
+
+/* ── DISBURSAL / SUCCESS ─────────────────────────────────────────────── */
+.success-wrap{text-align:center;padding:20px 0}
+.success-badge{
+  width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--green),#10b981);
+  display:flex;align-items:center;justify-content:center;font-size:42px;color:#fff;margin:0 auto 20px;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-amt{font-family:'Sora',sans-serif;font-size:34px;font-weight:900;color:var(--green);margin-bottom:4px}
+.success-sub{font-size:13px;color:var(--ink3);margin-bottom:24px}
+.receipt{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:left;margin-bottom:16px}
+.receipt-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border);font-size:12px}
+.receipt-row:last-child{border-bottom:none}
+.receipt-key{color:var(--ink3)}
+.receipt-val{font-weight:700;color:var(--ink)}
+.confetti{position:fixed;top:-10px;width:8px;height:14px;z-index:999;pointer-events:none}
+
+/* ── WELCOME ─────────────────────────────────────────────────────────── */
+.welcome-wrap{padding:8px 0}
+.welcome-hero{
+  background:linear-gradient(135deg,var(--sidebar),#1a163d);border-radius:22px;padding:32px 24px;
+  color:#fff;margin-bottom:24px;position:relative;overflow:hidden;
+}
+.welcome-hero::after{content:'';position:absolute;bottom:-60px;right:-60px;width:180px;height:180px;
+  border-radius:50%;background:radial-gradient(circle,#f59e0b30,transparent 70%)}
+.wh-eyebrow{font-size:11px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:1px}
+.wh-title{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;margin:8px 0 10px;line-height:1.25}
+.wh-sub{font-size:13px;color:#a8a5c9;line-height:1.5}
+.feature-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.feature-row:last-child{border-bottom:none}
+.fr-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.fr-text strong{display:block;font-size:12.5px;color:var(--ink);font-weight:700}
+.fr-text span{font-size:11px;color:var(--ink3)}
+
+/* ── BOTTOM ACTION BAR ───────────────────────────────────────────────── */
+.action-bar{
+  position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);
+  padding:14px 20px;display:flex;gap:10px;min-height:52px;
+}
+.btn{
+  flex:1;border:none;border-radius:13px;padding:15px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-mid));color:#fff}
+.btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--ink2);flex:0 0 auto;padding:15px 20px}
+.btn-outline:hover{border-color:var(--primary-mid);color:var(--primary)}
+.btn-secondary{background:var(--surface2);color:var(--ink2);border:1.5px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary-mid);color:var(--primary)}
+.btn-secondary:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── MODALS (KFS / T&C / Mandate redirect) ────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:#0d0b2666;z-index:700;display:none;
+  align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--surface);border-radius:20px;max-width:440px;width:100%;max-height:85vh;
+  display:flex;flex-direction:column;box-shadow:0 40px 100px #00000040;overflow:hidden;
+}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.modal-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:var(--ink);flex:1}
+.modal-close{width:28px;height:28px;border-radius:8px;border:none;background:var(--surface2);cursor:pointer;font-size:14px;color:var(--ink3);flex-shrink:0}
+.modal-close:hover{background:var(--border)}
+.modal-progress{height:4px;background:var(--surface2);flex-shrink:0}
+.modal-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));width:0%;transition:width .1s linear}
+.modal-scroll{flex:1;overflow-y:auto;padding:18px 20px;font-size:12px;line-height:1.7;color:var(--ink2)}
+.modal-scroll h4{font-family:'Sora',sans-serif;font-size:13px;color:var(--ink);margin:14px 0 6px}
+.modal-scroll h4:first-child{margin-top:0}
+.modal-scroll p{margin-bottom:10px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.modal-foot .btn{flex:1}
+
+/* misc */
+.anim-in{animation:fadeSlide .35s ease both}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);z-index:1000;
+  background:var(--ink);color:#fff;border-radius:12px;padding:12px 18px;font-size:12.5px;font-weight:500;
+  box-shadow:0 8px 24px #00000030;opacity:0;transition:.3s;pointer-events:none;max-width:320px;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="appFrame">
+  <!-- TOP BAR -->
+  <div class="app-topbar" id="appTopbar">
+    <div class="tb-row1">
+      <button class="tb-back" id="backBtn" onclick="prevStep()">←</button>
+      <div class="tb-logo">LoanOS</div>
+      <button class="tb-export-btn" onclick="openExportModal()" title="Export this application's current data for the LOS Dashboard">⬇ Export</button>
+      <div class="tb-secure">🔒 256-bit Secure</div>
+    </div>
+    <div id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label"><span id="progressStepLabel">Getting started</span><span id="progressPct">0%</span></div>
+      <div class="mini-stepper" id="miniStepper"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="app-main" id="appMain"></div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar" id="actionBar"></div>
+</div>
+
+<!-- DOC MODAL (KFS / T&C) -->
+<div class="modal-overlay" id="docModalOverlay" onclick="if(event.target===this)closeDocModal()">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-title" id="docModalTitle"></div><button class="modal-close" onclick="closeDocModal()">✕</button></div>
+    <div class="modal-progress"><div class="modal-progress-fill" id="docModalProgress"></div></div>
+    <div class="modal-scroll" id="docModalBody"></div>
+    <div class="modal-foot" id="docModalFoot"></div>
+  </div>
+</div>
+
+<!-- EXPORT FOR LOS DASHBOARD MODAL -->
+<div class="modal-overlay" id="exportModalOverlay" onclick="if(event.target===this)closeExportModal()">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-title">⬇ Export for LOS Dashboard</div><button class="modal-close" onclick="closeExportModal()">✕</button></div>
+    <div class="modal-scroll" id="exportModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" style="width:100%" onclick="copyExportJson()" id="exportCopyBtn">📋 Copy JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANDATE REDIRECT MODAL -->
+<div class="modal-overlay" id="mandateModalOverlay" onclick="if(event.target===this)closeMandateModal()">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-title">🏦 Mandate Registration</div><button class="modal-close" onclick="closeMandateModal()">✕</button></div>
+    <div class="modal-scroll" id="mandateModalBody"></div>
+    <div class="modal-foot" id="mandateModalFoot"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════ STEP DEFINITIONS ═══════════════════════════════════════ */
+const STEPS=[
+  {id:'welcome',    label:'Start',      icon:'👋'},
+  {id:'usercreation',label:'Mobile',    icon:'📱'},
+  {id:'personal',   label:'Personal',   icon:'👤'},
+  {id:'employment', label:'Employment', icon:'💼'},
+  {id:'bre',        label:'BRE Check',  icon:'⚙️'},
+  {id:'offer',      label:'Offer',      icon:'💰'},
+  {id:'accept',     label:'Accept',     icon:'🤝'},
+  {id:'kyc',        label:'KYC',        icon:'🛡️'},
+  {id:'pennydrop',  label:'Bank',       icon:'🏦'},
+  {id:'nach',       label:'NACH',       icon:'📑'},
+  {id:'agreement',  label:'E-Sign',     icon:'✍️'},
+  {id:'disbursal',  label:'Disbursed',  icon:'🎉'},
+];
+
+let currentStep=0;
+let data={
+  userCreation:{mobile:'',otpSent:false,otpVerified:false},
+  personal:{firstName:'',lastName:'',dob:'',gender:'',pan:'',mobile:'',email:'',pincode:'',city:'',state:'',address:''},
+  employment:{empType:'Salaried',employer:'',designation:'',officialEmail:'',businessName:'',natureOfBusiness:'',yearsInBusiness:'',incomeBand:'',income:0,experience:'',bureauConsent:false},
+  bre:{creditScore:0,eligibleAmount:0,decision:''},
+  offer:{amount:0,tenure:36,rate:0,emi:0,maxTenure:60,feePercent:3},
+  kyc:{aadhaarSent:false,aadhaarVerified:false,panVerified:false,faceStatus:'idle',
+       backendChecksRunning:false,backendChecksDone:false,nameMatch:false,dobMatched:false,seedingDone:false,livenessDone:false},
+  pennydrop:{verified:false,accountHolder:'',bank:'',accountLast4:'',ifsc:''},
+  nach:{method:'',registered:false,mandateId:''},
+  agreement:{agreed:false,signed:false,signedAt:'',kfsRead:false,tncViewed:false,docRead:false},
+  disbursal:{utr:'',disbursedAt:'',disbursedDateISO:'',disbursedAtTs:0},
+  meta:{startedAt:Date.now(),lastActivityAt:Date.now(),userCreationDoneAt:0,personalDoneAt:0,employmentDoneAt:0,qualifiedAt:0,offerAcceptedAt:0,kycDoneAt:0,pennydropAt:0,nachAt:0,agreementAt:0}
+};
+const caseId='LA-'+new Date().getFullYear()+'-'+String(Math.floor(1000+Math.random()*9000));
+
+/* ════════════ REFERENCE DATA ══════════════════════════════════════════ */
+const ALLOWED_EMAIL_DOMAINS=['gmail.com','yahoo.com','yahoo.in','hotmail.com','outlook.com','live.com','rediffmail.com','icloud.com'];
+function isAllowedEmail(email){
+  const m=/^[^\s@]+@([^\s@]+\.[^\s@]+)$/.exec((email||'').trim());
+  if(!m)return false;
+  return ALLOWED_EMAIL_DOMAINS.includes(m[1].toLowerCase());
+}
+function isValidEmailFormat(email){return /^\S+@\S+\.\S+$/.test((email||'').trim());}
+
+/* Curated Indian pincode master (exact city/state) with a postal-circle fallback by first digit */
+const PIN_MASTER={
+  '400001':['Mumbai','Maharashtra'],'400051':['Mumbai','Maharashtra'],'411001':['Pune','Maharashtra'],
+  '440001':['Nagpur','Maharashtra'],'110001':['New Delhi','Delhi'],'110021':['New Delhi','Delhi'],
+  '560001':['Bengaluru','Karnataka'],'560066':['Bengaluru','Karnataka'],'600001':['Chennai','Tamil Nadu'],
+  '600028':['Chennai','Tamil Nadu'],'641001':['Coimbatore','Tamil Nadu'],'500001':['Hyderabad','Telangana'],
+  '500081':['Hyderabad','Telangana'],'700001':['Kolkata','West Bengal'],'380001':['Ahmedabad','Gujarat'],
+  '395001':['Surat','Gujarat'],'302001':['Jaipur','Rajasthan'],'682001':['Kochi','Kerala'],
+  '160001':['Chandigarh','Chandigarh'],'226001':['Lucknow','Uttar Pradesh'],'201301':['Noida','Uttar Pradesh'],
+  '452001':['Indore','Madhya Pradesh'],'462001':['Bhopal','Madhya Pradesh'],'751001':['Bhubaneswar','Odisha'],
+  '800001':['Patna','Bihar'],'834001':['Ranchi','Jharkhand'],'781001':['Guwahati','Assam'],
+  '122001':['Gurugram','Haryana'],'141001':['Ludhiana','Punjab'],'190001':['Srinagar','Jammu & Kashmir'],
+  '171001':['Shimla','Himachal Pradesh']
+};
+const REGION_BY_DIGIT={
+  '1':'Delhi / Haryana region','2':'Punjab / HP / J&K region','3':'Rajasthan / Gujarat region',
+  '4':'Maharashtra / MP / Chhattisgarh / Goa region','5':'Karnataka / Andhra / Telangana region',
+  '6':'Tamil Nadu / Kerala / Puducherry region','7':'West Bengal / Odisha / North-East region',
+  '8':'Bihar / Jharkhand region','9':'Army Postal Service'
+};
+function lookupPincode(pin){
+  if(!/^\d{6}$/.test(pin))return null;
+  if(PIN_MASTER[pin])return {city:PIN_MASTER[pin][0],state:PIN_MASTER[pin][1],exact:true};
+  return {city:'',state:REGION_BY_DIGIT[pin[0]]||'India',exact:false};
+}
+
+const INCOME_BANDS=[
+  {id:'lt30',label:'Less than ₹30,000',value:25000},
+  {id:'30-50',label:'₹30,000 – ₹50,000',value:40000},
+  {id:'50-100',label:'₹50,000 – ₹1,00,000',value:75000},
+  {id:'100-500',label:'₹1,00,000 – ₹5,00,000',value:250000},
+  {id:'5l+',label:'₹5,00,000+',value:600000},
+];
+const YEARS_BANDS=[
+  {id:'0-1',label:'Less than 1 year'},{id:'1-3',label:'1–3 years'},
+  {id:'3-5',label:'3–5 years'},{id:'5+',label:'5+ years'}
+];
+const NATURE_OF_BUSINESS=['Trading','Manufacturing','Services','Freelance / Consulting','Other'];
+
+/* ════════════ NAVIGATION ═══════════════════════════════════════════ */
+function renderMiniStepper(){
+  const ms=document.getElementById('miniStepper');
+  ms.innerHTML=STEPS.map((s,i)=>{
+    if(s.id==='welcome')return '';
+    const cls=i<currentStep?'done':i===currentStep?'current':'';
+    return `<div class="ms-item ${cls}">
+      <div class="ms-dot">${i<currentStep?'✓':s.icon}</div>
+      <div class="ms-label">${s.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderProgress(){
+  const total=STEPS.length-1; // exclude welcome from % calc
+  const pct=currentStep===0?0:Math.round((currentStep/total)*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressStepLabel').textContent=
+    currentStep===0?'Getting started':`Step ${currentStep} of ${total}`;
+  document.getElementById('backBtn').disabled=(currentStep===0);
+  renderMiniStepper();
+}
+
+function goToStep(i){
+  currentStep=i;
+  renderProgress();
+  renderStep();
+  document.getElementById('appMain').scrollTo(0,0);
+  window.scrollTo(0,0);
+}
+function nextStep(){
+  if(!validateStep())return;
+  const id=STEPS[currentStep].id;
+  data.meta.lastActivityAt=Date.now();
+  if(id==='personal')data.meta.personalDoneAt=Date.now();
+  if(id==='employment')data.meta.employmentDoneAt=Date.now();
+  if(id==='accept')data.meta.offerAcceptedAt=Date.now();
+  if(id==='kyc')data.meta.kycDoneAt=Date.now();
+  if(id==='pennydrop')data.meta.pennydropAt=Date.now();
+  if(id==='nach')data.meta.nachAt=Date.now();
+  if(id==='agreement')data.meta.agreementAt=Date.now();
+  goToStep(Math.min(currentStep+1,STEPS.length-1));
+}
+function prevStep(){ if(currentStep>0)goToStep(currentStep-1); }
+
+/* ════════════ FIELD ERROR HELPER ═══════════════════════════════════ */
+function setFieldError(field,msg){
+  const errEl=document.getElementById('err_'+field);
+  const inputEl=document.getElementById('f_'+field);
+  if(errEl){errEl.textContent=msg||'';errEl.classList.toggle('show',!!msg);}
+  if(inputEl)inputEl.classList.toggle('invalid',!!msg);
+}
+
+/* ════════════ VALIDATION ═══════════════════════════════════════════ */
+function validateStep(){
+  const id=STEPS[currentStep].id;
+  if(id==='usercreation'){
+    if(!data.userCreation.otpVerified){toast('Please verify your mobile number to continue');return false;}
+  }
+  if(id==='personal'){
+    const p=data.personal;
+    let ok=true;
+    const nameRe=/^[A-Za-z][A-Za-z\s'-]{1,}$/;
+    if(!nameRe.test(p.firstName.trim())){setFieldError('firstName','Enter a valid first name (letters only)');ok=false;} else setFieldError('firstName','');
+    if(!nameRe.test(p.lastName.trim())){setFieldError('lastName','Enter a valid last name (letters only)');ok=false;} else setFieldError('lastName','');
+    if(!p.dob){toast('Please enter your date of birth');ok=false;}
+    if(!p.gender){toast('Please select your gender');ok=false;}
+    if(!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(p.pan.toUpperCase())){setFieldError('pan','Enter a valid PAN, e.g. ABCDE1234F');ok=false;} else setFieldError('pan','');
+    if(!isAllowedEmail(p.email)){setFieldError('email','Use a standard domain — gmail.com, yahoo.com, outlook.com, hotmail.com etc.');ok=false;} else setFieldError('email','');
+    if(!/^\d{6}$/.test(p.pincode)){setFieldError('pincode','Enter a valid 6-digit pincode');ok=false;} else setFieldError('pincode','');
+    if(!ok){toast('Please fix the highlighted fields');return false;}
+  }
+  if(id==='employment'){
+    const e=data.employment;
+    if(e.empType==='Salaried'){
+      if(!e.employer){toast('Please enter your employer name');return false;}
+      if(!isValidEmailFormat(e.officialEmail)){toast('Please enter a valid official email address');return false;}
+      if(!e.experience){toast('Please select your work experience');return false;}
+    } else {
+      if(!e.businessName){toast('Please enter your business/firm name');return false;}
+      if(!e.natureOfBusiness){toast('Please select the nature of your business');return false;}
+      if(!e.yearsInBusiness){toast('Please select years in business');return false;}
+    }
+    if(!e.incomeBand){toast('Please select your monthly income range');return false;}
+    if(!e.bureauConsent){toast('Please provide consent to pull your credit bureau report');return false;}
+  }
+  if(id==='accept'){
+    if(!data.agreement.agreed){toast('Please accept the terms to proceed');return false;}
+  }
+  if(id==='kyc'){
+    if(!data.kyc.aadhaarVerified){toast('Please verify your Aadhaar');return false;}
+    if(!data.kyc.backendChecksDone){toast('Please wait for identity verification checks to finish');return false;}
+    if(data.kyc.faceStatus!=='done'){toast('Please complete face verification');return false;}
+  }
+  if(id==='pennydrop'){
+    if(!data.pennydrop.verified){toast('Please verify your bank account');return false;}
+  }
+  if(id==='nach'){
+    if(!data.nach.registered){toast('Please complete NACH mandate setup');return false;}
+  }
+  if(id==='agreement'){
+    if(!data.agreement.signed){toast('Please e-sign the agreement to proceed');return false;}
+  }
+  return true;
+}
+
+/* ════════════ RENDER ROUTER ═══════════════════════════════════════ */
+function renderStep(){
+  const id=STEPS[currentStep].id;
+  const main=document.getElementById('appMain');
+  const bar=document.getElementById('actionBar');
+  main.className='app-main anim-in';
+
+  const renderers={
+    welcome:renderWelcome, usercreation:renderUserCreation, personal:renderPersonal, employment:renderEmployment,
+    bre:renderBRE, offer:renderOffer, accept:renderAccept, kyc:renderKYC,
+    pennydrop:renderPennydrop, nach:renderNach, agreement:renderAgreement, disbursal:renderDisbursal
+  };
+  const r=renderers[id];
+  const {html,actions}=r();
+  main.innerHTML=html;
+  bar.innerHTML=actions;
+  document.getElementById('progressWrap').style.display=(id==='welcome'||id==='disbursal')?'none':'block';
+  if(id==='bre')runBRESequence();
+  if(id==='offer')initOfferSliders();
+  if(id==='agreement')setTimeout(onAgreementDocScroll,50);
+}
+
+/* ════════════ STEP: WELCOME ═══════════════════════════════════════ */
+function renderWelcome(){
+  return {html:`
+    <div class="welcome-wrap">
+      <div class="welcome-hero">
+        <div class="wh-eyebrow">LoanOS · Instant Personal Loans</div>
+        <div class="wh-title">Get money in your account, often within the hour.</div>
+        <div class="wh-sub">A fully digital loan journey — no paperwork, no branch visits. Just your details, a few taps, and you're done.</div>
+      </div>
+      <div>
+        ${[
+          {icon:'⚡',bg:'var(--primary-light)',t:'Instant eligibility check',s:'Know your approved amount in under a minute'},
+          {icon:'📄',bg:'var(--accent-light)',t:'Paperless KYC',s:'Verify identity digitally with Aadhaar & PAN'},
+          {icon:'✍️',bg:'var(--blue-light)',t:'Digital e-sign',s:'Sign your agreement with an Aadhaar OTP'},
+          {icon:'💸',bg:'var(--green-light)',t:'Fast disbursal',s:'Funds transferred directly to your bank account'},
+        ].map(f=>`
+          <div class="feature-row">
+            <div class="fr-icon" style="background:${f.bg}">${f.icon}</div>
+            <div class="fr-text"><strong>${f.t}</strong><span>${f.s}</span></div>
+          </div>`).join('')}
+      </div>
+    </div>`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Start My Application →</button>`
+  };
+}
+
+/* ════════════ STEP: USER CREATION (MOBILE + OTP) ════════════════════ */
+function renderUserCreation(){
+  const u=data.userCreation;
+  return {html:`
+    <div class="step-eyebrow">📱 Step 1 of 10</div>
+    <div class="step-title">Let's verify your mobile number</div>
+    <div class="step-sub">We'll send a one-time password to confirm it's you before starting your application.</div>
+
+    <div class="verify-block ${u.otpVerified?'verified':''}" id="mobileBlock">
+      <div class="vb-header">
+        <div class="vb-icon">📱</div>
+        <div><div class="vb-title">Mobile Verification</div><div class="vb-status" id="mobileStatus">${u.otpVerified?'Verified · +91 '+u.mobile:u.otpSent?'Enter the OTP sent to your phone':'Enter your mobile number'}</div></div>
+        <div class="vb-check">✓</div>
+      </div>
+      <div id="mobileInputArea">
+        ${!u.otpSent?`
+          <input class="field-input" id="f_ucMobile" placeholder="9876543210" maxlength="10" inputmode="numeric" value="${u.mobile}"
+            oninput="data.userCreation.mobile=this.value.replace(/\\D/g,'');this.value=data.userCreation.mobile;setFieldError('ucMobile','')"/>
+          <div class="field-error" id="err_ucMobile"></div>
+          <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="sendUcOTP()">Send OTP</button>
+        `: !u.otpVerified?`
+          <div class="field-hint" style="margin-bottom:8px">OTP sent to +91 ${u.mobile}. Use <strong>123456</strong> for this demo.</div>
+          <div class="otp-row">${[0,1,2,3,4,5].map(i=>`<input class="otp-box" maxlength="1" inputmode="numeric" id="ucOtp${i}" oninput="handleUcOtpInput(this,${i})"/>`).join('')}</div>
+          <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="verifyUcOTP()">Verify OTP</button>
+        `:''}
+      </div>
+    </div>
+
+    <div class="info-box">
+      <span class="info-icon">🔐</span>
+      <div class="info-text">Your mobile number is used to send application updates and to secure your account.</div>
+    </div>`,
+    actions:`<button class="btn btn-primary" ${!u.otpVerified?'disabled':''} onclick="nextStep()">Continue →</button>`
+  };
+}
+function sendUcOTP(){
+  const val=document.getElementById('f_ucMobile').value;
+  data.userCreation.mobile=val.replace(/\D/g,'');
+  if(!/^[6-9]\d{9}$/.test(data.userCreation.mobile)){setFieldError('ucMobile','Enter a valid 10-digit mobile number');toast('Enter a valid 10-digit mobile number');return;}
+  setFieldError('ucMobile','');
+  data.userCreation.otpSent=true;
+  toast('OTP sent to +91 '+data.userCreation.mobile+' 📲');
+  renderStep();
+}
+function handleUcOtpInput(el,i){ if(el.value&&i<5)document.getElementById('ucOtp'+(i+1)).focus(); }
+function verifyUcOTP(){
+  let otp='';
+  for(let i=0;i<6;i++)otp+=(document.getElementById('ucOtp'+i)?.value||'');
+  if(otp!=='123456'){toast('Incorrect OTP. Use 123456 for this demo.');return;}
+  data.userCreation.otpVerified=true;
+  data.personal.mobile=data.userCreation.mobile;
+  data.meta.userCreationDoneAt=Date.now();
+  data.meta.lastActivityAt=data.meta.userCreationDoneAt;
+  toast('Mobile number verified ✅');
+  renderStep();
+}
+
+/* ════════════ STEP: PERSONAL INFO ═══════════════════════════════════ */
+function renderPersonal(){
+  const p=data.personal;
+  return {html:`
+    <div class="step-eyebrow">👤 Step 2 of 10</div>
+    <div class="step-title">Tell us about yourself</div>
+    <div class="step-sub">We'll use this to verify your identity and pre-fill your application.</div>
+
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">First Name</label>
+        <input class="field-input" id="f_firstName" placeholder="James" value="${p.firstName}"
+          oninput="data.personal.firstName=this.value.replace(/[^A-Za-z\\s'-]/g,'');this.value=data.personal.firstName;setFieldError('firstName','')"/>
+        <div class="field-error" id="err_firstName"></div></div>
+      <div class="field-group"><label class="field-label">Last Name</label>
+        <input class="field-input" id="f_lastName" placeholder="Mitchell" value="${p.lastName}"
+          oninput="data.personal.lastName=this.value.replace(/[^A-Za-z\\s'-]/g,'');this.value=data.personal.lastName;setFieldError('lastName','')"/>
+        <div class="field-error" id="err_lastName"></div></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Date of Birth</label>
+        <input class="field-input" type="date" id="f_dob" value="${p.dob}" oninput="data.personal.dob=this.value"/></div>
+      <div class="field-group"><label class="field-label">Gender</label>
+        <select class="field-input" id="f_gender" onchange="data.personal.gender=this.value">
+          <option value="" ${!p.gender?'selected':''}>Select</option>
+          <option ${p.gender==='Male'?'selected':''}>Male</option>
+          <option ${p.gender==='Female'?'selected':''}>Female</option>
+          <option ${p.gender==='Other'?'selected':''}>Other</option>
+        </select></div>
+    </div>
+    <div class="field-group"><label class="field-label">PAN Number</label>
+      <input class="field-input mono" id="f_pan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase"
+        value="${p.pan}" oninput="this.value=this.value.toUpperCase();data.personal.pan=this.value;setFieldError('pan','')"/>
+      <div class="field-hint">Used to fetch your credit report from the bureau</div>
+      <div class="field-error" id="err_pan"></div>
+    </div>
+    <div class="field-group"><label class="field-label">Mobile Number</label>
+      <input class="field-input" id="f_mobile" disabled value="+91 ${p.mobile}"/>
+      <div class="field-hint">✓ Verified in the previous step</div></div>
+    <div class="field-group"><label class="field-label">Email Address</label>
+      <input class="field-input" type="email" id="f_email" placeholder="you@gmail.com" value="${p.email}" oninput="data.personal.email=this.value;setFieldError('email','')"/>
+      <div class="field-hint">Standard domains only — gmail.com, yahoo.com, outlook.com, hotmail.com etc.</div>
+      <div class="field-error" id="err_email"></div></div>
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Pincode</label>
+        <input class="field-input" id="f_pincode" placeholder="400001" maxlength="6" inputmode="numeric"
+          value="${p.pincode}" oninput="handlePincodeInput(this.value)"/>
+        <div class="field-error" id="err_pincode"></div></div>
+      <div class="field-group"><label class="field-label">City / State <span class="opt">(auto)</span></label>
+        <input class="field-input" id="f_city" placeholder="Auto-detected from pincode" disabled
+          value="${p.city?p.city+', '+p.state:(p.state||'')}"/></div>
+    </div>
+    <div class="field-group"><label class="field-label">Current Address</label>
+      <input class="field-input" id="f_address" placeholder="House no, street, area" value="${p.address}" oninput="data.personal.address=this.value"/></div>
+
+    <div class="info-box">
+      <span class="info-icon">🔐</span>
+      <div class="info-text">Your information is encrypted and shared only with the lending partner for this application.</div>
+    </div>`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Continue →</button>`
+  };
+}
+function handlePincodeInput(val){
+  const digits=(val||'').replace(/\D/g,'').slice(0,6);
+  data.personal.pincode=digits;
+  const el=document.getElementById('f_pincode'); if(el)el.value=digits;
+  setFieldError('pincode','');
+  if(digits.length===6){
+    const r=lookupPincode(digits);
+    data.personal.city=r&&r.exact?r.city:'';
+    data.personal.state=r?r.state:'';
+  } else {
+    data.personal.city='';data.personal.state='';
+  }
+  const cityEl=document.getElementById('f_city');
+  if(cityEl)cityEl.value=data.personal.city?(data.personal.city+', '+data.personal.state):(data.personal.state||'');
+}
+
+/* ════════════ STEP: EMPLOYMENT ═══════════════════════════════════════ */
+function renderEmployment(){
+  const e=data.employment;
+  const typeFieldsHtml = e.empType==='Salaried' ? `
+    <div class="field-group"><label class="field-label">Employer Name</label>
+      <input class="field-input" id="f_employer" placeholder="e.g. Tata Consultancy Services" value="${e.employer}" oninput="data.employment.employer=this.value"/></div>
+    <div class="field-group"><label class="field-label">Designation <span class="opt">(optional)</span></label>
+      <input class="field-input" id="f_designation" placeholder="e.g. Senior Analyst" value="${e.designation}" oninput="data.employment.designation=this.value"/></div>
+    <div class="field-group"><label class="field-label">Official Email Address</label>
+      <input class="field-input" type="email" id="f_officialEmail" placeholder="you@company.com" value="${e.officialEmail}" oninput="data.employment.officialEmail=this.value"/>
+      <div class="field-hint">Mandatory for salaried applicants — used to verify employment</div></div>
+    <div class="field-group">
+      <label class="field-label">Work Experience</label>
+      <select class="field-input" id="f_experience" onchange="data.employment.experience=this.value">
+        <option value="" ${!e.experience?'selected':''}>Select experience</option>
+        ${YEARS_BANDS.map(b=>`<option value="${b.id}" ${e.experience===b.id?'selected':''}>${b.label}</option>`).join('')}
+      </select>
+    </div>` : `
+    <div class="field-group"><label class="field-label">Business / Firm Name</label>
+      <input class="field-input" id="f_businessName" placeholder="e.g. Mehta Textiles" value="${e.businessName}" oninput="data.employment.businessName=this.value"/></div>
+    <div class="field-group">
+      <label class="field-label">Nature of Business</label>
+      <select class="field-input" id="f_nob" onchange="data.employment.natureOfBusiness=this.value">
+        <option value="" ${!e.natureOfBusiness?'selected':''}>Select</option>
+        ${NATURE_OF_BUSINESS.map(n=>`<option ${e.natureOfBusiness===n?'selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Years in Business</label>
+      <select class="field-input" id="f_yib" onchange="data.employment.yearsInBusiness=this.value">
+        <option value="" ${!e.yearsInBusiness?'selected':''}>Select</option>
+        ${YEARS_BANDS.map(b=>`<option value="${b.id}" ${e.yearsInBusiness===b.id?'selected':''}>${b.label}</option>`).join('')}
+      </select>
+    </div>`;
+
+  return {html:`
+    <div class="step-eyebrow">💼 Step 3 of 10</div>
+    <div class="step-title">Your employment details</div>
+    <div class="step-sub">This helps us calculate how much you're eligible to borrow.</div>
+
+    <div class="field-group">
+      <label class="field-label">Employment Type</label>
+      <div class="pill-group" id="empTypeGroup">
+        ${['Salaried','Self-Employed'].map(t=>`<div class="pill-opt ${e.empType===t?'selected':''}" onclick="selectEmpType('${t}')">${t}</div>`).join('')}
+      </div>
+    </div>
+    ${typeFieldsHtml}
+    <div class="field-group">
+      <label class="field-label">Monthly Income</label>
+      <select class="field-input" id="f_incomeBand" onchange="selectIncomeBand(this.value)">
+        <option value="" ${!e.incomeBand?'selected':''}>Select income range</option>
+        ${INCOME_BANDS.map(b=>`<option value="${b.id}" ${e.incomeBand===b.id?'selected':''}>${b.label}</option>`).join('')}
+      </select>
+      <div class="field-hint">Take-home salary or average monthly business income</div>
+    </div>
+
+    <div class="info-box amber">
+      <span class="info-icon">💡</span>
+      <div class="info-text"><strong>Tip:</strong> A higher declared income (with proof) can increase your eligible loan amount and get you a better interest rate.</div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="bureauConsentCheck" ${e.bureauConsent?'checked':''} onchange="data.employment.bureauConsent=this.checked"/>
+      <label for="bureauConsentCheck">I consent to LoanOS pulling my credit bureau report to assess my loan eligibility.</label>
+    </div>`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Run Eligibility Check →</button>`
+  };
+}
+function selectEmpType(t){
+  data.employment.empType=t;
+  if(t==='Salaried'){ data.employment.businessName='';data.employment.natureOfBusiness='';data.employment.yearsInBusiness=''; }
+  else{ data.employment.employer='';data.employment.designation='';data.employment.officialEmail='';data.employment.experience=''; }
+  renderStep();
+}
+function selectIncomeBand(id){
+  const band=INCOME_BANDS.find(b=>b.id===id);
+  data.employment.incomeBand=id;
+  data.employment.income=band?band.value:0;
+}
+
+/* ════════════ STEP: BRE (Backend Rule Engine) ═══════════════════════ */
+function renderBRE(){
+  return {html:`
+    <div class="step-eyebrow">⚙️ Step 4 of 10</div>
+    <div class="step-title">Checking your eligibility…</div>
+    <div class="step-sub">Sit tight — we're running your profile through our credit and risk engine. You'll be taken to your offer automatically.</div>
+    <div class="bre-wrap">
+      <div class="bre-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <defs><linearGradient id="breGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#f59e0b"/>
+          </linearGradient></defs>
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="fill" id="breRingFill" cx="60" cy="60" r="52" stroke-dasharray="327" stroke-dashoffset="327"/>
+        </svg>
+        <div class="bre-pct" id="brePct">0%</div>
+      </div>
+      <div class="bre-checklist" id="breChecklist">
+        <div class="bre-check-item" data-step="0"><div class="bci-icon">1</div><div class="bci-text">Fetching credit bureau report</div></div>
+        <div class="bre-check-item" data-step="1"><div class="bci-icon">2</div><div class="bci-text">Running income & risk rules</div></div>
+        <div class="bre-check-item" data-step="2"><div class="bci-icon">3</div><div class="bci-text">Checking existing obligations</div></div>
+        <div class="bre-check-item" data-step="3"><div class="bci-icon">4</div><div class="bci-text">Calculating your offer</div></div>
+      </div>
+    </div>`,
+    actions:``
+  };
+}
+function runBRESequence(){
+  const ring=document.getElementById('breRingFill');
+  const pctEl=document.getElementById('brePct');
+  const items=document.querySelectorAll('.bre-check-item');
+  const circumference=327;
+  let pct=0;
+  const timer=setInterval(()=>{
+    pct+=2;
+    if(pct>100)pct=100;
+    if(ring)ring.style.strokeDashoffset=circumference-(circumference*pct/100);
+    if(pctEl)pctEl.textContent=pct+'%';
+    if(pct>=100)clearInterval(timer);
+  },40);
+
+  const stepTimes=[600,1500,2400,3200];
+  items.forEach((el,i)=>{
+    setTimeout(()=>{
+      items.forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('.bci-icon').innerHTML='<span class="spin">⟳</span>';
+    },stepTimes[i]-500);
+    setTimeout(()=>{
+      el.classList.remove('active');el.classList.add('done');
+      el.querySelector('.bci-icon').innerHTML='✓';
+    },stepTimes[i]);
+  });
+
+  setTimeout(()=>{
+    computeBRE();
+    if(STEPS[currentStep] && STEPS[currentStep].id==='bre'){ goToStep(currentStep+1); }
+  },3600);
+}
+function computeBRE(){
+  const income=parseInt(data.employment.income||0,10);
+  // synthetic but income-correlated credit score
+  let score=Math.min(820,Math.max(600,620+Math.round(income/1000)+Math.floor(Math.random()*40)-20));
+  const eligible=Math.round(Math.min(1500000,income*18)/1000)*1000;
+  data.bre.creditScore=score;
+  data.bre.eligibleAmount=Math.max(50000,eligible);
+  data.bre.decision='approved';
+  data.offer.amount=Math.round(data.bre.eligibleAmount*0.8/1000)*1000;
+  data.offer.rate=score>=750?10.5:score>=700?12.5:score>=650?14.5:16.5;
+  data.offer.maxTenure=score>=750?60:score>=700?48:score>=650?36:24;
+  data.offer.tenure=Math.min(data.offer.tenure||36,data.offer.maxTenure);
+  data.offer.feePercent=score>=750?2:score>=700?3:score>=650?4:5;
+  data.meta.qualifiedAt=Date.now();
+  data.meta.lastActivityAt=data.meta.qualifiedAt;
+}
+
+/* ════════════ STEP: OFFER ═══════════════════════════════════════════ */
+function renderOffer(){
+  const o=data.offer,b=data.bre;
+  return {html:`
+    <div class="step-eyebrow">💰 Step 5 of 10</div>
+    <div class="step-title">Congratulations! You're pre-approved</div>
+    <div class="step-sub">Customize your loan amount and tenure below.</div>
+
+    <div class="offer-hero">
+      <div class="oh-label">Maximum Eligible Amount</div>
+      <div class="oh-amount">₹${b.eligibleAmount.toLocaleString('en-IN')}</div>
+      <div class="oh-badge">⏳ Max Tenure: ${o.maxTenure} months</div>
+    </div>
+
+    <div class="slider-card">
+      <div class="slider-top"><span class="slider-label">Loan Amount</span><span class="slider-value" id="amountDisplay">₹${o.amount.toLocaleString('en-IN')}</span></div>
+      <input type="range" id="amountSlider" min="50000" max="${b.eligibleAmount}" step="5000" value="${o.amount}" oninput="updateOfferCalc()"/>
+      <div class="slider-range"><span>₹50K</span><span>₹${(b.eligibleAmount/100000).toFixed(1)}L</span></div>
+    </div>
+
+    <div class="slider-card">
+      <div class="slider-top"><span class="slider-label">Tenure</span><span class="slider-value" id="tenureDisplay">${o.tenure} months</span></div>
+      <input type="range" id="tenureSlider" min="12" max="${o.maxTenure}" step="6" value="${o.tenure}" oninput="updateOfferCalc()"/>
+      <div class="slider-range"><span>12 mo</span><span>${o.maxTenure} mo</span></div>
+    </div>
+
+    <div class="emi-summary" style="grid-template-columns:repeat(3,1fr)">
+      <div class="emi-box"><div class="emi-box-val" id="emiVal">₹0</div><div class="emi-box-lbl">Monthly EMI</div></div>
+      <div class="emi-box"><div class="emi-box-val" id="rateVal">${o.rate}%</div><div class="emi-box-lbl">Interest Rate</div></div>
+      <div class="emi-box"><div class="emi-box-val" id="feeVal">₹0</div><div class="emi-box-lbl">Fee (${o.feePercent}%)</div></div>
+    </div>`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Accept This Offer →</button>`
+  };
+}
+function initOfferSliders(){ updateOfferCalc(); }
+function updateOfferCalc(){
+  const amtSlider=document.getElementById('amountSlider');
+  const tenSlider=document.getElementById('tenureSlider');
+  if(!amtSlider)return;
+  data.offer.amount=parseInt(amtSlider.value,10);
+  data.offer.tenure=parseInt(tenSlider.value,10);
+  document.getElementById('amountDisplay').textContent='₹'+data.offer.amount.toLocaleString('en-IN');
+  document.getElementById('tenureDisplay').textContent=data.offer.tenure+' months';
+  const emi=calcEMI(data.offer.amount,data.offer.rate,data.offer.tenure);
+  data.offer.emi=emi;
+  document.getElementById('emiVal').textContent='₹'+emi.toLocaleString('en-IN');
+  const fee=Math.round(data.offer.amount*data.offer.feePercent/100);
+  document.getElementById('feeVal').textContent='₹'+fee.toLocaleString('en-IN');
+}
+function calcEMI(p,rAnnual,n){
+  const r=(rAnnual/12)/100;
+  if(r===0)return Math.round(p/n);
+  return Math.round(p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1));
+}
+
+/* ════════════ STEP: ACCEPT OFFER ═══════════════════════════════════ */
+function renderAccept(){
+  const o=data.offer,a=data.agreement;
+  const fee=Math.round(o.amount*o.feePercent/100);
+  return {html:`
+    <div class="step-eyebrow">🤝 Step 6 of 10</div>
+    <div class="step-title">Confirm your loan terms</div>
+    <div class="step-sub">Review the final terms before proceeding to verification.</div>
+
+    <div class="terms-list">
+      <div class="terms-row"><span class="tr-key">Loan Amount</span><span class="tr-val">₹${o.amount.toLocaleString('en-IN')}</span></div>
+      <div class="terms-row"><span class="tr-key">Tenure</span><span class="tr-val">${o.tenure} months</span></div>
+      <div class="terms-row"><span class="tr-key">Interest Rate</span><span class="tr-val">${o.rate}% p.a.</span></div>
+      <div class="terms-row"><span class="tr-key">Monthly EMI</span><span class="tr-val">₹${o.emi.toLocaleString('en-IN')}</span></div>
+      <div class="terms-row"><span class="tr-key">Processing Fee</span><span class="tr-val">₹${fee.toLocaleString('en-IN')} + GST (${o.feePercent}%)</span></div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="agreeCheck" ${a.agreed?'checked':''} ${!a.kfsRead?'disabled':''} onchange="data.agreement.agreed=this.checked"/>
+      <label for="agreeCheck">I have read and agree to the <a onclick="openDocModal('kfs')">Key Fact Statement</a> and <a onclick="openDocModal('tnc')">Most Important Terms &amp; Conditions</a> of this loan.</label>
+    </div>
+    ${!a.kfsRead?`<div class="field-hint" style="margin-top:-12px">Open and read the Key Fact Statement to the end to enable this checkbox.</div>`:''}`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Accept & Continue →</button>`
+  };
+}
+
+/* ════════════ DOC MODAL: KFS / T&C ══════════════════════════════════ */
+function buildKFSContent(){
+  const o=data.offer;
+  const fee=Math.round(o.amount*o.feePercent/100);
+  const totalInterest=o.emi*o.tenure-o.amount;
+  const apr=(o.rate+o.feePercent/(o.tenure/12)).toFixed(2);
+  return `
+    <h4>1. Loan Proposal / Sanction Details</h4>
+    <p>Lender: LoanOS Digital Lending Platform<br/>Borrower: ${data.personal.firstName} ${data.personal.lastName}<br/>Loan Amount: ₹${o.amount.toLocaleString('en-IN')}<br/>Tenure: ${o.tenure} months</p>
+    <h4>2. Interest Rate &amp; APR</h4>
+    <p>Nominal Interest Rate: ${o.rate}% p.a. (reducing balance)<br/>Processing Fee: ${o.feePercent}% of loan amount (₹${fee.toLocaleString('en-IN')})<br/>Annual Percentage Rate (APR), inclusive of all charges: approximately ${apr}% p.a.</p>
+    <h4>3. Fee &amp; Charges Schedule</h4>
+    <p>Processing Fee: ₹${fee.toLocaleString('en-IN')} + GST, deducted upfront. Late Payment Charge: 2% per month on the overdue EMI. Prepayment / Foreclosure Charge: 2% of outstanding principal, after 6 months. Bounce Charges: ₹500 per instance.</p>
+    <h4>4. Repayment</h4>
+    <p>Monthly EMI: ₹${o.emi.toLocaleString('en-IN')}, payable on the 5th of every month via NACH auto-debit. Total interest payable over the tenure: ₹${Math.round(totalInterest).toLocaleString('en-IN')}.</p>
+    <h4>5. Cooling-off / Look-up Period</h4>
+    <p>You may cancel this loan without penalty within 3 days of disbursement, subject to repayment of the principal and pro-rata interest for the period the loan was availed.</p>
+    <h4>6. Contact for Grievances</h4>
+    <p>Grievance Redressal Officer, LoanOS · grievance@loanos.in · 1800-123-4567. If unresolved within 30 days, you may approach the Reserve Bank of India's Integrated Ombudsman Scheme.</p>
+    <h4>7. Declaration</h4>
+    <p>This Key Fact Statement is a summary of the most important terms of your loan and does not replace the detailed Loan Agreement. Please read both documents carefully before proceeding.</p>`;
+}
+function buildTnCContent(){
+  return `
+    <h4>1. Eligibility</h4><p>The borrower confirms all information provided is true, accurate and complete, and that they meet the eligibility criteria of the lender at the time of application and throughout the loan tenure.</p>
+    <h4>2. Disbursement</h4><p>Loan proceeds will be disbursed to the verified bank account only after successful KYC, bank verification and execution of the loan agreement.</p>
+    <h4>3. Repayment Obligations</h4><p>The borrower shall ensure sufficient balance in the linked account on each EMI due date. Non-payment may attract late fees and be reported to credit bureaus, impacting the borrower's credit score.</p>
+    <h4>4. Prepayment &amp; Foreclosure</h4><p>Part or full prepayment is permitted after 6 months from disbursement, subject to applicable foreclosure charges as disclosed in the Key Fact Statement.</p>
+    <h4>5. Default &amp; Recovery</h4><p>In the event of default, the lender reserves the right to initiate recovery proceedings in accordance with applicable law, including engaging authorized recovery agents.</p>
+    <h4>6. Data &amp; Privacy</h4><p>The borrower consents to the lender accessing their credit bureau report and sharing application data with regulated partners strictly for the purposes of this loan.</p>
+    <h4>7. Governing Law</h4><p>This agreement is governed by the laws of India, subject to the jurisdiction of courts at the lender's registered office location.</p>`;
+}
+function openDocModal(type){
+  document.getElementById('docModalTitle').textContent = type==='kfs' ? 'Key Fact Statement' : 'Most Important Terms & Conditions';
+  document.getElementById('docModalBody').innerHTML = type==='kfs' ? buildKFSContent() : buildTnCContent();
+  document.getElementById('docModalFoot').innerHTML = type==='kfs'
+    ? `<button class="btn btn-outline" onclick="closeDocModal()">Close</button><button class="btn btn-primary" id="kfsAcceptBtn" ${data.agreement.kfsRead?'':'disabled'} onclick="acceptKFS()">${data.agreement.kfsRead?'Accepted ✓':'Scroll to the end to accept'}</button>`
+    : `<button class="btn btn-primary" style="width:100%" onclick="closeTnCModal()">Close</button>`;
+  document.getElementById('docModalOverlay').classList.add('open');
+  const body=document.getElementById('docModalBody');
+  body.scrollTop=0;
+  document.getElementById('docModalProgress').style.width='0%';
+  body.onscroll=()=>updateDocScrollProgress(body,type);
+  setTimeout(()=>updateDocScrollProgress(body,type),60);
+}
+function updateDocScrollProgress(el,type){
+  const denom=el.scrollHeight-el.clientHeight;
+  const pct= denom<=0 ? 100 : Math.min(100,Math.max(0,(el.scrollTop/denom)*100));
+  const bar=document.getElementById('docModalProgress'); if(bar)bar.style.width=pct+'%';
+  if(type==='kfs' && pct>=96 && !data.agreement.kfsRead){
+    const btn=document.getElementById('kfsAcceptBtn');
+    if(btn){btn.disabled=false;btn.textContent='I Have Read & Accept KFS';}
+  }
+}
+function acceptKFS(){
+  data.agreement.kfsRead=true;
+  closeDocModal();
+  toast('KFS accepted ✅');
+  renderStep();
+}
+function closeTnCModal(){
+  data.agreement.tncViewed=true;
+  closeDocModal();
+}
+function closeDocModal(){
+  document.getElementById('docModalOverlay').classList.remove('open');
+}
+
+/* ════════════ STEP: KYC ═══════════════════════════════════════════ */
+function renderKYC(){
+  const k=data.kyc;
+  const checksRunningOrDone = k.backendChecksRunning || k.backendChecksDone;
+  return {html:`
+    <div class="step-eyebrow">🛡️ Step 7 of 10</div>
+    <div class="step-title">Verify your identity</div>
+    <div class="step-sub">Quick digital KYC — complete the checks below.</div>
+
+    <div class="verify-block ${k.aadhaarVerified?'verified':''}" id="aadhaarBlock">
+      <div class="vb-header">
+        <div class="vb-icon">🪪</div>
+        <div><div class="vb-title">Aadhaar Verification</div><div class="vb-status" id="aadhaarStatus">${k.aadhaarVerified?'Verified via UIDAI':'Enter your Aadhaar number'}</div></div>
+        <div class="vb-check">✓</div>
+      </div>
+      <div id="aadhaarInputArea">
+        ${!k.aadhaarSent?`
+          <input class="field-input mono" id="aadhaarNum" placeholder="XXXX XXXX XXXX" maxlength="14"/>
+          <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="sendAadhaarOTP()">Send OTP</button>
+        `: !k.aadhaarVerified?`
+          <div class="field-hint" style="margin-bottom:8px">OTP sent to your registered mobile. Use <strong>123456</strong> for this demo.</div>
+          <div class="otp-row">
+            ${[0,1,2,3,4,5].map(i=>`<input class="otp-box" maxlength="1" inputmode="numeric" id="otp${i}" oninput="handleOtpInput(this,${i})"/>`).join('')}
+          </div>
+          <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="verifyAadhaarOTP()">Verify OTP</button>
+        `:''}
+      </div>
+    </div>
+
+    ${checksRunningOrDone?`
+      <div class="verify-block ${k.backendChecksDone?'verified':''}" id="backendChecksBlock">
+        <div class="vb-header">
+          <div class="vb-icon">⚙️</div>
+          <div><div class="vb-title">Identity Verification Checks</div><div class="vb-status">${k.backendChecksDone?'All checks passed':'Running backend checks…'}</div></div>
+          <div class="vb-check">✓</div>
+        </div>
+        <div class="bre-checklist" id="kycBackendChecklist" style="gap:8px">
+          <div class="bre-check-item ${k.backendChecksDone?'done':''}" data-step="0"><div class="bci-icon">${k.backendChecksDone?'✓':'1'}</div><div class="bci-text">PAN fetched &amp; verified with NSDL</div></div>
+          <div class="bre-check-item ${k.backendChecksDone?'done':''}" data-step="1"><div class="bci-icon">${k.backendChecksDone?'✓':'2'}</div><div class="bci-text">Name match — PAN vs Aadhaar</div></div>
+          <div class="bre-check-item ${k.backendChecksDone?'done':''}" data-step="2"><div class="bci-icon">${k.backendChecksDone?'✓':'3'}</div><div class="bci-text">Date of birth match</div></div>
+          <div class="bre-check-item ${k.backendChecksDone?'done':''}" data-step="3"><div class="bci-icon">${k.backendChecksDone?'✓':'4'}</div><div class="bci-text">PAN–Aadhaar seeding status</div></div>
+          <div class="bre-check-item ${k.backendChecksDone?'done':''}" data-step="4"><div class="bci-icon">${k.backendChecksDone?'✓':'5'}</div><div class="bci-text">Liveliness check</div></div>
+        </div>
+      </div>
+    `:''}
+
+    <div class="verify-block ${k.faceStatus==='done'?'verified':''}" id="faceBlock" style="${!k.backendChecksDone?'opacity:.5':''}">
+      <div class="vb-header">
+        <div class="vb-icon">🤳</div>
+        <div><div class="vb-title">Selfie Match with DigiLocker</div><div class="vb-status" id="faceStatusText">${k.faceStatus==='done'?'Face match successful':k.backendChecksDone?'Position your face in the frame':'Complete identity checks above to unlock'}</div></div>
+        <div class="vb-check">✓</div>
+      </div>
+      <div class="face-frame ${k.faceStatus==='scanning'?'scanning':''} ${k.faceStatus==='done'?'done':''}" id="faceFrame">
+        ${k.faceStatus==='done'?'✅':k.faceStatus==='scanning'?'📸':'🙂'}
+      </div>
+      ${k.faceStatus!=='done'&&k.backendChecksDone?`<button class="btn btn-secondary" style="width:100%" onclick="captureFace()" ${k.faceStatus==='scanning'?'disabled':''}>${k.faceStatus==='scanning'?'Matching…':'Match Selfie with DigiLocker Photo'}</button>`:''}
+    </div>`,
+    actions:`<button class="btn btn-primary" onclick="nextStep()">Continue →</button>`
+  };
+}
+function sendAadhaarOTP(){
+  const val=document.getElementById('aadhaarNum').value;
+  if(!/^\d{4}\s?\d{4}\s?\d{4}$/.test(val.trim())){toast('Enter a valid 12-digit Aadhaar number');return;}
+  data.kyc.aadhaarSent=true;
+  toast('OTP sent to your registered mobile 📲');
+  renderStep();
+}
+function handleOtpInput(el,i){
+  if(el.value&&i<5)document.getElementById('otp'+(i+1)).focus();
+}
+function verifyAadhaarOTP(){
+  let otp='';
+  for(let i=0;i<6;i++)otp+=(document.getElementById('otp'+i)?.value||'');
+  if(otp!=='123456'){toast('Incorrect OTP. Use 123456 for this demo.');return;}
+  data.kyc.aadhaarVerified=true;
+  data.kyc.backendChecksRunning=true;
+  toast('Aadhaar verified via UIDAI ✅');
+  renderStep();
+  animateKYCBackendChecks();
+}
+function animateKYCBackendChecks(){
+  const items=document.querySelectorAll('#kycBackendChecklist .bre-check-item');
+  const times=[500,1300,2100,2900,3600];
+  items.forEach((el,i)=>{
+    setTimeout(()=>{
+      items.forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('.bci-icon').innerHTML='<span class="spin">⟳</span>';
+    },Math.max(0,times[i]-450));
+    setTimeout(()=>{
+      el.classList.remove('active');el.classList.add('done');
+      el.querySelector('.bci-icon').innerHTML='✓';
+    },times[i]);
+  });
+  setTimeout(()=>{
+    Object.assign(data.kyc,{panVerified:true,nameMatch:true,dobMatched:true,seedingDone:true,livenessDone:true,
+      backendChecksRunning:false,backendChecksDone:true});
+    toast('Identity verification checks completed ✅');
+    if(STEPS[currentStep] && STEPS[currentStep].id==='kyc'){ renderStep(); }
+  },4000);
+}
+function captureFace(){
+  data.kyc.faceStatus='scanning';
+  renderStep();
+  setTimeout(()=>{
+    data.kyc.faceStatus='done';
+    toast('Selfie matched with DigiLocker photo — 98.4% confidence ✅');
+    renderStep();
+  },1800);
+}
+
+/* ════════════ STEP: PENNYDROP ═══════════════════════════════════════ */
+function renderPennydrop(){
+  const pd=data.pennydrop;
+  return {html:`
+    <div class="step-eyebrow">🏦 Step 8 of 10</div>
+    <div class="step-title">Verify your bank account</div>
+    <div class="step-sub">We'll deposit ₹1 to confirm this account belongs to you — it's instant and free.</div>
+
+    ${!pd.verified?`
+      <div class="field-group"><label class="field-label">Bank Name</label>
+        <select class="field-input" id="f_bank">
+          <option>HDFC Bank</option><option>ICICI Bank</option><option>State Bank of India</option>
+          <option>Axis Bank</option><option>Kotak Mahindra Bank</option><option>Federal Bank</option>
+        </select></div>
+      <div class="field-group"><label class="field-label">Account Number</label>
+        <input class="field-input mono" id="f_accnum" placeholder="12-digit account number" inputmode="numeric" maxlength="12"
+          oninput="this.value=this.value.replace(/\\D/g,'').slice(0,12)"/></div>
+      <div class="field-group"><label class="field-label">Confirm Account Number</label>
+        <input class="field-input mono" id="f_accnum2" placeholder="Re-enter account number" inputmode="numeric" maxlength="12"
+          oninput="this.value=this.value.replace(/\\D/g,'').slice(0,12)"/></div>
+      <div class="field-group"><label class="field-label">IFSC Code</label>
+        <input class="field-input mono" id="f_ifsc" placeholder="HDFC0001234" style="text-transform:uppercase"/></div>
+      <button class="btn btn-secondary" style="width:100%;margin-top:6px" onclick="runPennydrop()" id="pdBtn">Verify Bank Account</button>
+    `:`
+      <div class="verify-block verified">
+        <div class="vb-header">
+          <div class="vb-icon">🏦</div>
+          <div><div class="vb-title">${pd.accountHolder}</div><div class="vb-status">Account verified · ₹1 credited successfully</div></div>
+          <div class="vb-check">✓</div>
+        </div>
+      </div>
+      <div class="info-box green">
+        <span class="info-icon">✅</span>
+        <div class="info-text">Your disbursed loan amount will be credited to this account.</div>
+      </div>
+    `}`,
+    actions:`<button class="btn btn-primary" ${!pd.verified?'disabled':''} onclick="nextStep()">Continue →</button>`
+  };
+}
+function runPennydrop(){
+  const bank=document.getElementById('f_bank').value;
+  const a1=document.getElementById('f_accnum').value;
+  const a2=document.getElementById('f_accnum2').value;
+  const ifsc=document.getElementById('f_ifsc').value;
+  if(!/^\d{12}$/.test(a1)){toast('Enter a valid 12-digit account number');return;}
+  if(a1!==a2){toast('Account numbers do not match');return;}
+  if(!/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(ifsc)){toast('Enter a valid IFSC code');return;}
+  const btn=document.getElementById('pdBtn');
+  btn.disabled=true;btn.textContent='Verifying with bank…';
+  setTimeout(()=>{
+    data.pennydrop.verified=true;
+    data.pennydrop.accountHolder=data.personal.firstName+' '+data.personal.lastName;
+    data.pennydrop.bank=bank;
+    data.pennydrop.accountLast4=a1.slice(-4);
+    data.pennydrop.ifsc=ifsc.toUpperCase();
+    toast('Bank account verified ✅');
+    renderStep();
+  },1600);
+}
+
+/* ════════════ STEP: NACH MANDATE ═══════════════════════════════════ */
+function renderNach(){
+  const n=data.nach;
+  return {html:`
+    <div class="step-eyebrow">📑 Step 9 of 10</div>
+    <div class="step-title">Set up auto-debit for EMIs</div>
+    <div class="step-sub">Register a NACH mandate so your EMI is deducted automatically each month — no manual payments needed.</div>
+
+    ${!n.registered?`
+      <div class="field-group">
+        <label class="field-label">Choose Setup Method</label>
+        <div class="pill-group" id="nachMethodGroup">
+          ${['Net Banking','Debit Card'].map(m=>`<div class="pill-opt ${n.method===m?'selected':''}" onclick="selectNachMethod('${m}')">${m}</div>`).join('')}
+        </div>
+      </div>
+      <div class="info-box">
+        <span class="info-icon">📅</span>
+        <div class="info-text">EMI of <strong>₹${data.offer.emi.toLocaleString('en-IN')}</strong> will be auto-debited on the <strong>5th of every month</strong>. Selecting a method redirects you to your bank's mandate registration service.</div>
+      </div>
+    `:`
+      <div class="verify-block verified">
+        <div class="vb-header">
+          <div class="vb-icon">📑</div>
+          <div><div class="vb-title">Mandate Registered</div><div class="vb-status">${n.mandateId} · via ${n.method}</div></div>
+          <div class="vb-check">✓</div>
+        </div>
+      </div>
+      <div class="terms-list">
+        <div class="terms-row"><span class="tr-key">EMI Amount</span><span class="tr-val">₹${data.offer.emi.toLocaleString('en-IN')}</span></div>
+        <div class="terms-row"><span class="tr-key">Debit Date</span><span class="tr-val">5th of every month</span></div>
+        <div class="terms-row"><span class="tr-key">Mandate Status</span><span class="tr-val" style="color:var(--green)">Active</span></div>
+      </div>
+    `}`,
+    actions:`<button class="btn btn-primary" ${!n.registered?'disabled':''} onclick="nextStep()">Continue →</button>`
+  };
+}
+function selectNachMethod(m){
+  data.nach.method=m;
+  openMandateModal(m);
+}
+function openMandateModal(method){
+  const o=data.offer, pd=data.pennydrop;
+  document.getElementById('mandateModalBody').innerHTML=`
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.6px">Redirecting via</div>
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--primary);margin-top:2px">NPCI eMandate · ${method}</div>
+    </div>
+    <div class="terms-list" style="margin-bottom:16px">
+      <div class="terms-row"><span class="tr-key">Debit To</span><span class="tr-val">${pd.bank||'—'} · XXXX${pd.accountLast4||'0000'}</span></div>
+      <div class="terms-row"><span class="tr-key">Loan Amount</span><span class="tr-val">₹${o.amount.toLocaleString('en-IN')} · ${o.tenure} mo</span></div>
+      <div class="terms-row"><span class="tr-key">EMI Amount</span><span class="tr-val">₹${o.emi.toLocaleString('en-IN')}/mo</span></div>
+      <div class="terms-row"><span class="tr-key">Frequency</span><span class="tr-val">Monthly, 5th</span></div>
+      <div class="terms-row"><span class="tr-key">Max Debit Limit</span><span class="tr-val">₹${o.emi.toLocaleString('en-IN')}</span></div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="mandateConsentCheck" onchange="onMandateConsentChange(this.checked)"/>
+      <label for="mandateConsentCheck">I authorize ${pd.bank||'my bank'} to debit my account for EMI repayment as per the schedule above, via NACH.</label>
+    </div>
+    <div id="mandateOtpArea"></div>`;
+  document.getElementById('mandateModalFoot').innerHTML='';
+  document.getElementById('mandateModalOverlay').classList.add('open');
+}
+function onMandateConsentChange(checked){
+  const area=document.getElementById('mandateOtpArea');
+  if(!checked){area.innerHTML='';return;}
+  area.innerHTML=`
+    <div class="field-hint" style="margin-bottom:8px">Enter the OTP sent to your registered mobile (use <strong>123456</strong> for this demo)</div>
+    <div class="otp-row">${[0,1,2,3,4,5].map(i=>`<input class="otp-box" maxlength="1" inputmode="numeric" id="mandateOtp${i}" oninput="handleMandateOtp(this,${i})"/>`).join('')}</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="verifyMandateOtp()">Confirm &amp; Register Mandate</button>`;
+}
+function handleMandateOtp(el,i){ if(el.value&&i<5)document.getElementById('mandateOtp'+(i+1)).focus(); }
+function verifyMandateOtp(){
+  let otp='';
+  for(let i=0;i<6;i++)otp+=(document.getElementById('mandateOtp'+i)?.value||'');
+  if(otp!=='123456'){toast('Incorrect OTP. Use 123456 for this demo.');return;}
+  closeMandateModal();
+  setupNach();
+}
+function closeMandateModal(){
+  document.getElementById('mandateModalOverlay').classList.remove('open');
+}
+function setupNach(){
+  data.nach.registered=true;
+  data.nach.mandateId='NACH'+Date.now().toString().slice(-8);
+  toast('NACH mandate registered ✅');
+  renderStep();
+}
+
+/* ════════════ STEP: AGREEMENT / E-SIGN ══════════════════════════════ */
+function buildAgreementDocContent(o){
+  const fee=Math.round(o.amount*o.feePercent/100);
+  const totalInterest=o.emi*o.tenure-o.amount;
+  return `
+    <h4>Sanction Letter</h4>
+    <p>Dear ${data.personal.firstName} ${data.personal.lastName}, we are pleased to inform you that your loan application has been sanctioned. Loan Amount: ₹${o.amount.toLocaleString('en-IN')} · Tenure: ${o.tenure} months · Interest Rate: ${o.rate}% p.a. (reducing balance) · Processing Fee: ₹${fee.toLocaleString('en-IN')} + GST. This sanction is valid subject to successful completion of KYC and bank verification, which you have now completed.</p>
+    <div class="doc-pagebreak"></div>
+    <h4>Loan Agreement</h4>
+    <p>This Loan Agreement ("Agreement") is entered into between LoanOS Digital Lending Platform ("Lender") and ${data.personal.firstName} ${data.personal.lastName} ("Borrower"), residing at ${data.personal.address||'the address provided during application'}${data.personal.city?(', '+data.personal.city):''}.</p>
+    <p><strong>1. Loan Terms.</strong> The Lender agrees to lend the Borrower ₹${o.amount.toLocaleString('en-IN')} for a tenure of ${o.tenure} months at ${o.rate}% per annum, repayable in ${o.tenure} equal monthly instalments of ₹${o.emi.toLocaleString('en-IN')} each.</p>
+    <p><strong>2. Repayment.</strong> Repayment shall be through NACH auto-debit from the Borrower's verified bank account on the 5th of every month, beginning the month following disbursement.</p>
+    <p><strong>3. Prepayment.</strong> The Borrower may prepay the loan, in part or full, after 6 months from disbursement, subject to a foreclosure charge of 2% on the outstanding principal.</p>
+    <p><strong>4. Default.</strong> Failure to pay any instalment within 3 days of its due date shall constitute a default, entitling the Lender to levy late payment charges and report the default to credit information companies.</p>
+    <p><strong>5. Governing Law.</strong> This Agreement is governed by the laws of India, subject to the jurisdiction of courts at the Lender's registered office.</p>
+    <div class="doc-pagebreak"></div>
+    <h4>Key Fact Statement (Summary)</h4>
+    <p>Total Interest Payable: ₹${Math.round(totalInterest).toLocaleString('en-IN')} · Processing Fee: ${o.feePercent}% (₹${fee.toLocaleString('en-IN')}) · Late Payment Charge: 2% per month on overdue EMI · Cooling-off Period: 3 days from disbursement, without penalty, on repayment of principal and pro-rata interest.</p>
+    <p>By signing below, the Borrower confirms having read and understood the Sanction Letter, this Loan Agreement and the Key Fact Statement in full, and that all information provided during this application is true and accurate to the best of their knowledge.</p>`;
+}
+function renderAgreement(){
+  const a=data.agreement,o=data.offer;
+  return {html:`
+    <div class="step-eyebrow">✍️ Step 10 of 10</div>
+    <div class="step-title">Review &amp; sign your documents</div>
+    <div class="step-sub">Scroll through the Sanction Letter, Loan Agreement and Key Fact Statement below, then sign digitally with an Aadhaar OTP.</div>
+
+    <div class="doc-preview" id="agreementDocScroll" style="max-height:280px" onscroll="onAgreementDocScroll()">
+      ${buildAgreementDocContent(o)}
+    </div>
+    ${!a.docRead?`<div class="field-hint" id="agreementScrollHint" style="margin:-8px 0 16px">⬇ Scroll to the end of the document to enable signing.</div>`:''}
+
+    ${!a.signed?`
+      <div class="sign-pad" id="signPad">
+        <div style="font-size:12px;color:var(--ink3);font-weight:600">Tap below to e-sign with Aadhaar OTP</div>
+        <button class="btn btn-secondary" style="width:auto;margin-top:14px;padding:12px 24px" onclick="startESign()" id="esignBtn" ${!a.docRead?'disabled':''}>🔏 Sign with Aadhaar OTP</button>
+      </div>
+    `:`
+      <div class="sign-pad signed">
+        <div style="font-size:12px;color:var(--green);font-weight:700">✓ Digitally Signed</div>
+        <div class="sign-script">${data.personal.firstName} ${data.personal.lastName}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:8px">Signed on ${a.signedAt} · Aadhaar e-Sign, IT Act 2000</div>
+      </div>
+    `}`,
+    actions:`<button class="btn btn-primary" ${!a.signed?'disabled':''} onclick="nextStep()">Proceed to Disbursal →</button>`
+  };
+}
+function onAgreementDocScroll(){
+  const el=document.getElementById('agreementDocScroll');
+  if(!el||data.agreement.docRead)return;
+  const denom=el.scrollHeight-el.clientHeight;
+  const pct= denom<=0 ? 100 : (el.scrollTop/denom)*100;
+  if(pct>=96){
+    data.agreement.docRead=true;
+    const btn=document.getElementById('esignBtn'); if(btn)btn.disabled=false;
+    const hint=document.getElementById('agreementScrollHint'); if(hint)hint.style.display='none';
+  }
+}
+function startESign(){
+  const btn=document.getElementById('esignBtn');
+  const pad=document.getElementById('signPad');
+  if(btn.disabled)return;
+  pad.innerHTML=`
+    <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:10px">Enter OTP sent to your Aadhaar-linked mobile (use <strong>123456</strong>)</div>
+    <div class="otp-row" style="justify-content:center">
+      ${[0,1,2,3,4,5].map(i=>`<input class="otp-box" maxlength="1" inputmode="numeric" id="esignOtp${i}" oninput="handleEsignOtp(this,${i})"/>`).join('')}
+    </div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:14px" onclick="verifyESign()">Confirm & Sign</button>`;
+}
+function handleEsignOtp(el,i){ if(el.value&&i<5)document.getElementById('esignOtp'+(i+1)).focus(); }
+function verifyESign(){
+  let otp='';
+  for(let i=0;i<6;i++)otp+=(document.getElementById('esignOtp'+i)?.value||'');
+  if(otp!=='123456'){toast('Incorrect OTP. Use 123456 for this demo.');return;}
+  data.agreement.signed=true;
+  data.agreement.signedAt=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  toast('Agreement signed successfully ✅');
+  renderStep();
+}
+
+/* ════════════ STEP: DISBURSAL ═══════════════════════════════════════ */
+function renderDisbursal(){
+  const o=data.offer;
+  if(!data.disbursal.utr){
+    const now=new Date();
+    data.disbursal.utr='UTR'+Date.now().toString().slice(-10);
+    data.disbursal.disbursedAt=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    data.disbursal.disbursedDateISO=now.toISOString().slice(0,10);
+    data.disbursal.disbursedAtTs=now.getTime();
+    data.meta.lastActivityAt=data.disbursal.disbursedAtTs;
+    setTimeout(fireConfetti,300);
+  }
+  return {html:`
+    <div class="success-wrap">
+      <div class="success-badge">🎉</div>
+      <div class="success-amt">₹${o.amount.toLocaleString('en-IN')}</div>
+      <div class="success-sub">has been disbursed to your bank account</div>
+
+      <div class="receipt">
+        <div class="receipt-row"><span class="receipt-key">Borrower</span><span class="receipt-val">${data.personal.firstName} ${data.personal.lastName}</span></div>
+        <div class="receipt-row"><span class="receipt-key">Loan Amount</span><span class="receipt-val">₹${o.amount.toLocaleString('en-IN')}</span></div>
+        <div class="receipt-row"><span class="receipt-key">Tenure</span><span class="receipt-val">${o.tenure} months</span></div>
+        <div class="receipt-row"><span class="receipt-key">Monthly EMI</span><span class="receipt-val">₹${o.emi.toLocaleString('en-IN')}</span></div>
+        <div class="receipt-row"><span class="receipt-key">First EMI Date</span><span class="receipt-val">5th of next month</span></div>
+        <div class="receipt-row"><span class="receipt-key">UTR Number</span><span class="receipt-val mono">${data.disbursal.utr}</span></div>
+        <div class="receipt-row"><span class="receipt-key">Disbursed On</span><span class="receipt-val">${data.disbursal.disbursedAt}</span></div>
+      </div>
+
+      <div class="info-box green" style="text-align:left">
+        <span class="info-icon">📩</span>
+        <div class="info-text">A confirmation email and sanction letter have been sent to <strong>${data.personal.email||'your registered email'}</strong>.</div>
+      </div>
+    </div>`,
+    actions:`
+      <button class="btn btn-secondary" onclick="toast('Sanction letter downloaded 📄')">Download Letter</button>
+      <button class="btn btn-primary" onclick="toast('Redirecting to your loan dashboard…')">View Loan Dashboard</button>`
+  };
+}
+function fireConfetti(){
+  const colors=['#6d28d9','#f59e0b','#059669','#2563eb','#db2777'];
+  for(let i=0;i<50;i++){
+    const el=document.createElement('div');
+    el.className='confetti';
+    el.style.left=Math.random()*100+'%';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    el.style.animation=`confettiFall ${1.6+Math.random()*1.2}s ease-in forwards`;
+    el.style.animationDelay=(Math.random()*0.4)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3200);
+  }
+}
+const styleEl=document.createElement('style');
+styleEl.textContent=`@keyframes confettiFall{to{transform:translateY(100vh) rotate(600deg);opacity:0}}`;
+document.head.appendChild(styleEl);
+
+/* ════════════ EXPORT FOR LOS DASHBOARD ══════════════════════════════ */
+const DASHBOARD_STAGE_BY_STEP={
+  welcome:'user_creation',usercreation:'user_creation',personal:'personal_info',employment:'employment_info',bre:'employment_info',
+  offer:'offer',accept:'offer',kyc:'kyc_success',pennydrop:'pennydrop',nach:'nach',
+  agreement:'agreement',disbursal:'disbursed'
+};
+function deriveDashboardStage(){ return DASHBOARD_STAGE_BY_STEP[STEPS[currentStep].id]||'user_creation'; }
+function fmtTs(ts){
+  if(!ts)return '';
+  const d=new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function buildExportSnapshot(){
+  const p=data.personal,e=data.employment,o=data.offer,b=data.bre,k=data.kyc,pd=data.pennydrop,n=data.nach,a=data.agreement,ds=data.disbursal,m=data.meta,u=data.userCreation;
+  const journey=[];
+  journey.push(u.otpVerified
+    ? {stage:'user_creation',label:'User Creation',ts:fmtTs(m.userCreationDoneAt),tsMs:m.userCreationDoneAt,status:'done',
+        details:{'Mobile':u.mobile?('+91 '+u.mobile):'—','OTP Verified':'Yes','Channel':'App'}}
+    : {stage:'user_creation',label:'User Creation',ts:fmtTs(m.startedAt),tsMs:m.startedAt,status:'active',
+        details:{'Mobile':u.mobile?('+91 '+u.mobile):'—','OTP Verified':'No','Channel':'App'}});
+  if(m.personalDoneAt)journey.push({stage:'personal_info',label:'Personal Information',ts:fmtTs(m.personalDoneAt),tsMs:m.personalDoneAt,status:'done',
+    details:{'Name':(p.firstName+' '+p.lastName).trim()||'—','PAN':p.pan||'—','Pincode':p.pincode||'—','City':p.city||p.state||'—'}});
+  if(m.employmentDoneAt)journey.push({stage:'employment_info',label:'Employment Information',ts:fmtTs(m.employmentDoneAt),tsMs:m.employmentDoneAt,status:'done',
+    details: e.empType==='Salaried'
+      ? {'Type':'Salaried','Employer':e.employer||'—','Income Band':(INCOME_BANDS.find(x=>x.id===e.incomeBand)||{}).label||'—'}
+      : {'Type':'Self-Employed','Business':e.businessName||'—','Income Band':(INCOME_BANDS.find(x=>x.id===e.incomeBand)||{}).label||'—'}});
+  if(m.qualifiedAt)journey.push({stage:'qualified',label:'User Qualified',ts:fmtTs(m.qualifiedAt),tsMs:m.qualifiedAt,
+    status:(STEPS[currentStep]&&STEPS[currentStep].id==='bre')?'active':'done',
+    details:{'Eligible Amount':'₹'+(b.eligibleAmount||0).toLocaleString('en-IN'),'Max Tenure':(o.maxTenure||0)+' months'}});
+  if(m.offerAcceptedAt)journey.push({stage:'offer',label:'Offer Accepted',ts:fmtTs(m.offerAcceptedAt),tsMs:m.offerAcceptedAt,status:'done',
+    details:{'Amount':'₹'+(o.amount||0).toLocaleString('en-IN'),'Tenure':(o.tenure||0)+' months','Rate':o.rate+'%','Fee':o.feePercent+'%'}});
+  if(m.kycDoneAt)journey.push({stage:'kyc_success',label:'KYC Success',ts:fmtTs(m.kycDoneAt),tsMs:m.kycDoneAt,status:'done',
+    details:{'Aadhaar':'Verified','PAN–Aadhaar Seeding':k.seedingDone?'Matched':'—','Face Match':k.faceStatus==='done'?'DigiLocker ✓':'Pending'}});
+  if(m.pennydropAt)journey.push({stage:'pennydrop',label:'Pennydrop',ts:fmtTs(m.pennydropAt),tsMs:m.pennydropAt,status:'done',
+    details:{'Bank':pd.bank||'—','Account':'XXXX'+(pd.accountLast4||'0000'),'Status':'Success'}});
+  if(m.nachAt)journey.push({stage:'nach',label:'NACH Mandate',ts:fmtTs(m.nachAt),tsMs:m.nachAt,status:'done',
+    details:{'Mandate ID':n.mandateId||'—','Method':n.method||'—','Status':'Registered'}});
+  if(m.agreementAt)journey.push({stage:'agreement',label:'Agreement Stage',ts:fmtTs(m.agreementAt),tsMs:m.agreementAt,status:a.signed?'done':'active',
+    details:{'Signed':a.signed?'Yes':'Pending','Signed On':a.signedAt||'—'}});
+  if(ds.utr)journey.push({stage:'disbursed',label:'Disbursement',ts:fmtTs(ds.disbursedAtTs||Date.now()),tsMs:ds.disbursedAtTs||Date.now(),status:'done',
+    details:{'Amount Disbursed':'₹'+(o.amount||0).toLocaleString('en-IN'),'UTR No':ds.utr,'Mode':'NEFT'}});
+
+  return {
+    id:caseId,
+    name:(p.firstName+' '+p.lastName).trim()||'Unnamed Applicant',
+    phone:p.mobile?('+91 '+p.mobile):'', email:p.email||'', pan:p.pan||'', dob:p.dob||'', gender:p.gender||'',
+    pincode:p.pincode||'', city:p.city||'', state:p.state||'',
+    loanType:'Personal Loan',
+    amount:o.amount||0, tenure:o.tenure||0, interest:o.rate||0, feePercent:o.feePercent||0, emi:o.emi||0,
+    empType:e.empType, employer:e.empType==='Salaried'?e.employer:e.businessName,
+    designation:e.designation||'', officialEmail:e.officialEmail||'',
+    natureOfBusiness:e.natureOfBusiness||'', yearsInBusiness:e.yearsInBusiness||'',
+    incomeBandLabel:(INCOME_BANDS.find(x=>x.id===e.incomeBand)||{}).label||'', experience:e.experience||'',
+    creditScore:b.creditScore||0,
+    stage:deriveDashboardStage(), status:(deriveDashboardStage()==='disbursed')?'closed':'active',
+    assignedTo:'', appliedAt:fmtTs(m.startedAt), appliedDateISO:new Date(m.startedAt).toISOString().slice(0,10),
+    updatedAt:fmtTs(m.lastActivityAt||m.startedAt), updatedAtMs:m.lastActivityAt||m.startedAt,
+    bank:pd.bank||'', ifsc:pd.ifsc||'', accountLast4:pd.accountLast4||'', accountHolder:pd.accountHolder||'',
+    nachMethod:n.method||'', mandateId:n.mandateId||'',
+    agreementSigned:a.signed, signedAt:a.signedAt||'',
+    utr:ds.utr||'', disbursedAt:ds.disbursedAt||'', disbursedDateISO:ds.disbursedDateISO||'',
+    journey
+  };
+}
+function openExportModal(){
+  const snap=buildExportSnapshot();
+  const json=JSON.stringify(snap,null,2);
+  document.getElementById('exportModalBody').innerHTML=`
+    <div class="field-hint" style="margin-bottom:10px">Case <strong class="mono">${snap.id}</strong> · currently at <strong>${STEPS[currentStep].label}</strong>. Copy this JSON and paste it into the LOS Dashboard's Import Cases panel.</div>
+    <textarea class="export-json-box" id="exportJsonText" readonly onclick="this.select()">${json.replace(/</g,'&lt;')}</textarea>`;
+  document.getElementById('exportModalOverlay').classList.add('open');
+}
+function closeExportModal(){ document.getElementById('exportModalOverlay').classList.remove('open'); }
+function copyExportJson(){
+  const box=document.getElementById('exportJsonText');
+  box.focus();box.select();
+  const finish=(ok)=>{
+    const btn=document.getElementById('exportCopyBtn');
+    btn.textContent= ok!==false ? '✅ Copied — paste it into the Dashboard' : '⌨️ Selected — press Ctrl/Cmd+C';
+    setTimeout(()=>{btn.textContent='📋 Copy JSON';},2200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(box.value).then(()=>finish(true)).catch(()=>finish(false));
+  } else { finish(false); }
+}
+
+/* ════════════ TOAST ═══════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ════════════ INIT ═══════════════════════════════════════════════ */
+goToStep(0);
+</script>
+</body>
+</html>
